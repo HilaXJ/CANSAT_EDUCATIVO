@@ -1,0 +1,80 @@
+
+=== SENSOR CALIBRATION DATA ===
+ENVIRONMENT:
+   temperature: 16.861003083572722
+   pressure: 1002.9302066031881
+   humidity: 72.96781697286661
+   altitude_bme280: 86.89093850427781
+battery_voltage: 12.467500000000001
+BNO055:
+   acceleration: (0.78, -1.74, 9.41)
+   magnetometer: (-132.0625, 162.0625, -96.6875)
+   gyroscope: (-0.002181661564992912, 0.00545415391248228, -0.001090830782496456)
+   linear_acceleration: (0.0, -0.07, 0.2)
+   gravity: (0.79, 1.78, -9.6)
+   euler: (228.5, -4.625, 169.4375)
+   quaternion: (0.1002197265625, 0.90704345703125, -0.40887451171875, -0.00018310546875)
+   temperature: -107
+   calibration: (2, 0, 0, 0)
+GPS:
+   latitude: -12.024836
+   longitude: -77.0471305
+   altitude_gps: 126.2
+ENCODERS:
+   ticks_right: 0
+   ticks_left: 0
+   angle_right: 0.0
+   angle_left: 0.0
+===============================
+
+
+[CALIBRATION] Iniciando calibración activa del BNO055...
+SYS=2 GYRO=3 ACCEL=1 MAG=0SYS=2 GYRO=3 ACCEL=1 MAG=3
+✅ BNO055 calibrado completamente durante el movimiento!
+
+=== SENSOR CALIBRATION DATA ===
+ENVIRONMENT:
+   temperature: 16.926912298524986
+   pressure: 1002.8470411062907
+   humidity: 72.93456898269162
+   altitude_bme280: 86.90597546220783
+battery_voltage: 12.4575
+BNO055:
+   acceleration: (0.71, -30.98, -7.97)
+   magnetometer: (-28.6875, 8.0, 1.75)
+   gyroscope: (-0.23234695667174513, -0.08944812416470939, 0.6043202535030366)
+   linear_acceleration: (-0.03, 3.06, -4.0)
+   gravity: (-0.93, 9.700000000000001, -1.08)
+   euler: (75.375, 5.4375, 96.375)
+   quaternion: (-0.52288818359375, -0.63427734375, 0.40228271484375, 0.403076171875)
+   temperature: -107
+   calibration: (2, 3, 1, 3)
+GPS:
+   latitude: -12.024827166666666
+   longitude: -77.04713433333333
+   altitude_gps: 126.0
+ENCODERS:
+   ticks_right: 3859
+   ticks_left: 3825
+   angle_right: 1410.3959390862944
+   angle_left: 1397.969543147208
+===============================
+
+epoch: 0
+g_theta: 2.584264, u_theta: 5.001545
+w: -1.281640
+vl: 7.822817, vr: 5.259536
+vl: 5.000000, vr: 2.436720
+left encoder:  3830
+right encoder:  3860
+predict state:  [[ -1.56140315]
+ [ -1.38141281]
+ [ -2.32159799]
+ [208.47736427]
+ [  0.        ]]
+measurements:  [[0.32506757]]
+update state:  [[ 1.63782147e+00]
+ [-4.36659325e+00]
+ [-1.99648042e-01]
+ [ 2.08477364e+02]
+ [ 2.09886246e-01]]

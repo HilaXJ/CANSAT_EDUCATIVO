@@ -1,0 +1,82 @@
+DESACTIVACION:
+Para desactivar el servicio:
+
+1. Detenerlo (si está corriendo):
+```bash
+sudo systemctl stop cansat-main.service
+```
+2. Deshabilitar inicio automático:
+```bash
+sudo systemctl disable cansat-main.service
+```
+3. (Opcional) Evitar que se inicie manualmente (mask):
+```bash
+sudo systemctl mask cansat-main.service
+```
+4. (Opcional) Verificar estado:
+```bash
+sudo systemctl status cansat-main.service
+```
+5. (Opcional) Eliminar el archivo del servicio:
+```bash
+sudo rm /etc/systemd/system/cansat-main.service
+sudo systemctl daemon-reload
+```
+
+Para reactivar después: unmask (si aplicaste mask), volver a crear el archivo (si lo borraste), luego enable y start.
+ACTIVACION:
+Para crear el archivo de servicio systemd, ejecuta en la terminal:
+
+```bash
+sudo nano /etc/systemd/system/cansat-main.service
+```
+
+Luego pega el contenido del servicio, guarda y cierra (Ctrl+O, Enter, Ctrl+X).
+
+Después, recarga systemd y habilita el servicio:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable cansat-main.service
+sudo systemctl start cansat-main.service
+```
+
+¡Listo!
+Debes darle permisos de ejecución a tu script antes de usar systemd. Ejecuta en la terminal:
+
+```bash
+chmod +x /home/hilax/PRUEBAS/main.py
+```
+
+Esto asegura que el archivo sea ejecutable por el sistema. Hazlo antes de iniciar el servicio con systemd.
+Perfecto, aquí tienes el archivo de servicio systemd adaptado para tu ruta:
+
+Crea el archivo `/etc/systemd/system/cansat-main.service` con este contenido:
+
+```
+[Unit]
+Description=CanSat Main Python Program
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/hilax/PRUEBAS/main.py
+WorkingDirectory=/home/hilax/PRUEBAS/
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=hilax
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Luego ejecuta estos comandos en la terminal para activarlo:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable cansat-main.service
+sudo systemctl start cansat-main.service
+sudo systemctl status cansat-main.service
+```
+
+¡Listo! Tu script se ejecutará automáticamente al encender la Raspberry Pi.
