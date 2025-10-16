@@ -4,7 +4,7 @@ import smbus2
 import bme280
 import time
 import math
-
+###########
 class BME280Sensor:
 
     def __init__(self, i2c_addr: int = 0x76, bus: int = 1, sea_level_pressure: float = 1013.25, alpha: float = 0.1):
