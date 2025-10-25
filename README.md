@@ -19,7 +19,7 @@ Rover diferencial para misión ARLISS/CanSat con navegación por GPS/IMU, contro
   - **GPS** (lat/lon/alt; distancia a objetivo).
   - **BNO055** (orientación + aceleración lineal).
   - **BME280** (temperatura, presión, altitud).
-  - **INA226** (corriente/voltaje).
+  - **INA226** (voltaje).
   - **Encoders** en ambas ruedas (odometría).
 
 - **Actuadores**
