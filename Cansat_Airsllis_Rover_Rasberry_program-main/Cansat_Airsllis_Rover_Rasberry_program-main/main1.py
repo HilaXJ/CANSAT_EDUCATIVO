@@ -1,4 +1,3 @@
-
 import time
 import subprocess
 from gpiozero import Motor
@@ -14,6 +13,9 @@ from manager import RoverManager
 from sphericalTrigonometry import SphericalPoint
 from calibration import Calibration
 from gpiozero import OutputDevice
+# imports arriba
+import queue
+from lora_sender import LoRaP2PSender
 import os
 def flatten_dict(d, parent_key='', sep='_'):
     items = []
@@ -36,6 +38,9 @@ def truncate_value(key, value):
     if isinstance(value, tuple):
         return tuple(round(v, 1) if isinstance(v, float) else v for v in value)
     return value
+
+
+
 
 DATA_FILE = "data_to_send.txt"
 def main():
@@ -92,26 +97,26 @@ def main():
     
     currently_task=tasks[0]
     epoch = 0
-    secondary_started = False
-    secondary_proc = None
+        # --- LoRa: cola e instancia del hilo (sin arrancar aún) ---
+    lora_queue = queue.Queue(maxsize=500)
+    lora_thread = None
+    lora_started = False
     try:
         # Para detección de aterrizaje por baja aceleración
         low_accel_start_time = None
         # === Reference altitude measurement ===
-        N_REF = 10
-        gps_altitudes = []
-        print("Measuring reference GPS altitude (10 samples)...")
-        while len(gps_altitudes) < N_REF:
-            alt = robot.gps.last_alt
-            if alt is not None and alt != 0.0:
-                gps_altitudes.append(alt)
-                print(f"GPS sample {len(gps_altitudes)}/{N_REF}: {alt:.2f} m")
-            else:
-                print("Esperando fix GPS...")
-            time.sleep(0.5)  # 500 ms entre muestras
-        alt_ref_gps = np.mean(gps_altitudes)
-        print(f"Reference GPS altitude (mean of {len(gps_altitudes)}): {alt_ref_gps:.2f} m")
-        
+        N_REF = 20
+        bme_altitudes = []
+        print("Measuring reference altitude (20 samples)...")
+        for _ in range(N_REF):
+            values = calibration.get_values()
+            bme_alt = values["environment"]["altitude_bme280"]
+            if bme_alt is not None and np.isfinite(bme_alt):
+                bme_altitudes.append(bme_alt)
+            time.sleep(0.2)
+        # sin puntos por iteración para no ensuciar logs
+        alt_ref_bme = np.mean(bme_altitudes) if bme_altitudes else 0.0
+        print(f"Reference BME280 altitude (mean of {len(bme_altitudes)}): {alt_ref_bme:.2f} m")
         
         while True:
             if currently_task == "sensorCalibration":
@@ -128,26 +133,32 @@ def main():
                         print(f"{key}: {value}")
                 print("===============================\n")
 
-                # Check for launch: GPS altitude >100m above reference
-                cond_gps = False
-                gps_current = robot.gps.last_alt
-                gps_diff = None
-                if gps_current is not None and gps_current != 0.0:
-                    gps_diff = gps_current - alt_ref_gps
-                    print(f"[Launch check] GPS altitude diff: {gps_diff:.2f} m (current: {gps_current:.2f}, ref: {alt_ref_gps:.2f})")
-                    if abs(gps_diff) > 100:
-                        cond_gps = True
-                if cond_gps:
+                # Check for launch: BME280 altitude >10m above reference
+                cond_bme = False
+                bme_current = sensors_data["environment"].get("altitude_bme280")
+                bme_diff = None
+                if bme_current is not None:
+                    bme_diff = bme_current - alt_ref_bme
+                    print(f"[Launch check] BME280 altitude diff: {bme_diff:.2f} m (current: {bme_current:.2f}, ref: {alt_ref_bme:.2f})")
+                    if abs(bme_diff) > min_altitude_air :
+                        cond_bme = True
+                if cond_bme:
                     print("Launch detected → Switching to inAir")
                     currently_task = "inAir"
-                    
-                    if not secondary_started:
-                        try:
-                            secondary_proc = subprocess.Popen(["python3", "lora_emisor.py"])  # ejecutar en paralelo
-                            secondary_started = True
-                            print("[INFO] Proceso secundario 'lora_emisor.py' iniciado en paralelo.")
-                        except Exception as e:
-                            print(f"[ERROR] No se pudo iniciar lora_emisor.py: {e}")    
+                    if not lora_started:
+                        lora_thread = LoRaP2PSender(
+                            q=lora_queue,
+                            port="/dev/serial0",         # igual que en tu script actual
+                            baud=9600,
+                            p2p="915000000:7:0:0:16:20", # mismo P2P que tu receptor
+                            reset_pin=27,
+                            period=1.0,                  # cadencia de envío aprox. 1s
+                            max_len=240
+                        )
+                        lora_thread.start()
+                        lora_started = True
+                        print("[INFO] Hilo LoRa P2P iniciado.")
+
             elif currently_task == "inAir":
                 led2.off()
                 sensors_data = calibration.get_values()
@@ -223,13 +234,11 @@ def main():
                 currently_task = "GPSControl"
 
             elif currently_task == "GPSControl":
-                #start = time.time()
                 print("epoch: %d" % epoch)
-                #gps_enabled = (epoch > 0 and (epoch % 100 == 0))
                 rover_manager.execute_control_gps()
                 epoch += 1
-                current_point = robot.gps.last_point 
-                distancia = np.linalg.norm(current_point.toENU(target))
+                current_point = robot.gps.last_point#halla la coordenada del gps 
+                distancia = np.linalg.norm(current_point.toENU(target))#distancia hacia la meta
                 
                 if distancia <= 4:
                     print("Objetivo alcanzado (dentro de 5 metros)")
@@ -250,24 +259,44 @@ def main():
             values = [truncate_value(k, v) for k, v in filtered]
             str_values = [str(v) for v in values]
             csv_payload = ','.join(str_values)
-            with open("data_to_send.txt", 'w') as f:
-                f.write(csv_payload + '\n')
+            
+            # === AQUÍ ENTRA tu envío a LoRa por queue (solo si el hilo ya está iniciado) ===
+            if lora_started:
+                # Mantener SOLO el último payload (mismo comportamiento que “leer el último del archivo”)
+                try:
+                    while True:
+                        lora_queue.get_nowait()   # vacía lo que hubiera (descarta antiguos)
+                except queue.Empty:
+                    pass
+                try:
+                    lora_queue.put_nowait(csv_payload)  # encola el último
+                except queue.Full:
+                    pass
+            # === HASTA AQUÍ ===
+
             time.sleep(dt)
             
             
     except KeyboardInterrupt:
         print("\n🛑 Misión interrumpida por el usuario.")
-        robot.update_speed(0, 0)
-        if secondary_proc and secondary_proc.poll() is None:
-            print("Cerrando proceso secundario...")
-            secondary_proc.terminate()
-            try:
-                secondary_proc.wait(timeout=5)
-            except Exception:
-                pass
+        try:
+            robot.update_speed(0, 0)   # o robot.stop()
+        except Exception:
+            pass
+
+        # Detener hilo LoRa si existe
+        try:
+            if 'lora_thread' in locals() and lora_thread:
+                lora_thread.stop()
+                # dale un momento para cerrar UART
+                if lora_thread.is_alive():
+                    lora_thread.join(timeout=1.0)
+                print("[INFO] Hilo LoRa detenido.")
+        except Exception:
+            pass
+
 
 
 
 if __name__ == "__main__":
     main()
-
