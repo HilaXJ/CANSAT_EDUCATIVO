@@ -5,7 +5,7 @@ class Motor():
         self.in1 = in1_pin
         self.in2 = in2_pin
         self.pi = pigpio.pi()
-        self.FREQ = 20000
+        self.FREQ = 1000
         self.MAX_DUTY = 1_000_000
         self.setup()
         self.stop()

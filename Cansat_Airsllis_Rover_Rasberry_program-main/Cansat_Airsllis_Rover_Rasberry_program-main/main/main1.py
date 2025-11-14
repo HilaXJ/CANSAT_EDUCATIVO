@@ -56,15 +56,12 @@ def main():
     right_motor = Motor(RIGHT_MOTOR_INPUT[0], RIGHT_MOTOR_INPUT[1])
 
     # === Nicrom GPIO ===
-    nicrom = OutputDevice(17, active_high=True, initial_value=False)
+    nicrom = OutputDevice(6, active_high=True, initial_value=False)
 
-    # === LEDs indicadores ===
-    led1 = OutputDevice(23, active_high=True, initial_value=False)  # LED indicador 1
-    led2 = OutputDevice(24, active_high=True, initial_value=False)  # LED indicador 2
 
     # === Encoders ===
-    LEFT_ENCODER_INPUT = {'hall_sensor_A':27, 'hall_sensor_B': 22, 'ticks_per_revolution': 985}
-    RIGHT_ENCODER_INPUT = {'hall_sensor_A': 5, 'hall_sensor_B': 6, 'ticks_per_revolution': 985}
+    LEFT_ENCODER_INPUT = {'hall_sensor_A':25, 'hall_sensor_B': 24, 'ticks_per_revolution': 985}
+    RIGHT_ENCODER_INPUT = {'hall_sensor_A': 27, 'hall_sensor_B': 17, 'ticks_per_revolution': 985}
     left_encoder = QuadratureEncoder(
         LEFT_ENCODER_INPUT['hall_sensor_A'],
         LEFT_ENCODER_INPUT['hall_sensor_B'],

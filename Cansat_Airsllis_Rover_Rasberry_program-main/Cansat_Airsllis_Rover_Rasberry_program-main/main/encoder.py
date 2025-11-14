@@ -89,8 +89,8 @@ class QuadratureEncoder:
 if __name__ == "__main__":
     try:
         # Configuración: pines GPIO del encoder y ticks por revolución
-        pin_a = 5   #27 cambia según tu conexión
-        pin_b = 6  #22 cambia según tu conexión
+        pin_a = 25   #27 cambia según tu conexión
+        pin_b = 24  #17 cambia según tu conexión
         tpr = 985    # ejemplo: 200 PPR * 2 (x2 cuadratura)
 
         encoder = QuadratureEncoder(pin_a, pin_b, tpr)
