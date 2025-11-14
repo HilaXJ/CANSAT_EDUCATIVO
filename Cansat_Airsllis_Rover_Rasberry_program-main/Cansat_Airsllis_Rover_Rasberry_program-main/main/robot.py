@@ -3,14 +3,15 @@ import math
 import numpy as np
 from bno055 import BNO055
 from bme_280 import BME280Sensor
-from ina226_sensor import INA226Sensor
+from ina226_sensor_1 import INA226Sensor as INA226Sensor_1
+from ina226_sensor_2 import INA226Sensor as INA226Sensor_2
 from motor import Motor
 from encoder import QuadratureEncoder
 from gps import GPS
 import time
 from sphericalTrigonometry import *
 class Robot():
-    def __init__(self, left_motor, right_motor, left_encoder, right_encoder, gps, bno055, bme280, ina226):
+    def __init__(self, left_motor, right_motor, left_encoder, right_encoder, gps, bno055, bme280, ina226_1,ina226_2):
         self.x = 0
         self.y = 0
         self.theta = 0
@@ -29,7 +30,8 @@ class Robot():
         self.gps = gps
         self.bno055 = bno055
         self.bme280 = bme280
-        self.ina226 = ina226  
+        self.ina226_1 = ina226_1
+        self.ina226_2 = ina226_2  
 
         self.reference, _ = self.gps.read()
         self.theta = bno055.get_heading_radians()
@@ -83,8 +85,13 @@ class Robot():
     def get_environment(self):#ok
         return self.bme280.read()
 
-    def get_battery_status(self):#ok
-        return self.ina226.read_voltage()
+    def get_battery_status(self):
+        v1 = self.ina226_1.read_voltage()
+        v2 = self.ina226_2.read_voltage()
+        return {
+            "battery_1": v1,
+            "battery_2": v2
+        }
     
     def active_calibration_bno055(self, timeout=120, speed=0.5):
         """
@@ -169,6 +176,7 @@ class Robot():
     def get_full_state(self):#Ok
         ambiente=self.get_environment()
         gps_val=self.gps.read()
+        battery = self.get_battery_status()
         return {
             "pose": {
                 "x": self.x,
@@ -180,7 +188,7 @@ class Robot():
             "temperature": ambiente["temperature"],
             "pressure": ambiente["pressure"],
             "humidity" : ambiente["humidity"],
-            "battery": self.get_battery_status(),
+            "battery": battery,
             "gps": { 
 		"longitude":gps_val[0].longitude,
 		"latitude":gps_val[0].latitude,
@@ -211,20 +219,21 @@ if __name__ == "__main__":
     right_motor = Motor(13,19)
 
     left_encoder = QuadratureEncoder(tpr=985,
-                                     pin_a=27, pin_b=22)
+                                     pin_a=25, pin_b=24)
     right_encoder = QuadratureEncoder(tpr=985,
-                                      pin_a=5, pin_b=6)
+                                      pin_a=27, pin_b=17)
 
     gps = GPS()  # your GPS driver (or mock if not ready yet)
 
     bno055 = BNO055()
     bme280 = BME280Sensor()
-    ina226 = INA226Sensor()
+    ina226_1 = INA226Sensor_1()
+    ina226_2 = INA226Sensor_2()
 
     # --- Create robot instance ---
     robot = Robot(left_motor, right_motor,
                   left_encoder, right_encoder,
-                  gps, bno055, bme280, ina226)
+                  gps, bno055, bme280, ina226_1,ina226_2)
     """
     print("=== ROBOT TEST START ===")
     print("Initial state:", robot.get_full_state())

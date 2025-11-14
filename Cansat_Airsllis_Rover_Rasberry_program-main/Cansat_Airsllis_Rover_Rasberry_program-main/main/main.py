@@ -8,7 +8,8 @@ from encoder import QuadratureEncoder
 from gps import GPS
 from bno055 import BNO055
 from bme_280 import BME280Sensor
-from ina226_sensor import INA226Sensor
+from ina226_sensor_1 import INA226Sensor as INA226Sensor_1
+from ina226_sensor_2 import INA226Sensor as INA226Sensor_2
 from controller import PIDController
 from manager import RoverManager
 from sphericalTrigonometry import SphericalPoint

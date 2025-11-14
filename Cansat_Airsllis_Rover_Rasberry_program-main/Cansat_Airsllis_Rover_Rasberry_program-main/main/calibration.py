@@ -4,7 +4,8 @@ from sphericalTrigonometry import SphericalPoint
 class Calibration():
     def __init__(self,robot):
         self.bme280=robot.bme280
-        self.ina226=robot.ina226
+        self.ina226_1=robot.ina226_1
+        self.ina226_2=robot.ina226_2
         self.gps=robot.gps
         self.bno055=robot.bno055
         self.left_encoder=robot.left_encoder
@@ -12,8 +13,9 @@ class Calibration():
 
     def get_values(self):
         environment=self.bme280.read()#me devuelve un diccionario
-        environment["altitude_bme280"]=self.bme280.get_altitude()
-        battery_voltage=self.ina226.read_voltage()#me devuelve un valor
+        environment["altitude"]=self.bme280.get_altitude()
+        battery_voltage_1=self.ina226_1.read_voltage()#me devuelve un valor
+        battery_voltage_2 = self.ina226_2.read_voltage()
         bno055_data=self.bno055.read()#me devuelve un diccionario
         # GPS no bloqueante: usar la última muestra disponible del hilo
         latitude_longitude = getattr(self.gps, 'last_point', None)
@@ -27,7 +29,8 @@ class Calibration():
 
         data = {
             "environment": environment,        # dict completo de BME280
-            "battery_voltage": battery_voltage,
+            "battery_1": battery_voltage_1,
+            "battery_2": battery_voltage_2,
             "bno055": bno055_data,             # dict completo de BNO055
             "gps": {
                 "latitude": latitude_longitude.latitude,

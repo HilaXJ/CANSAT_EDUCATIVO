@@ -7,7 +7,8 @@ from encoder import QuadratureEncoder
 from gps import GPS
 from bno055 import BNO055
 from bme_280 import BME280Sensor
-from ina226_sensor import INA226Sensor
+from ina226_sensor_1 import INA226Sensor as INA226Sensor_1
+from ina226_sensor_2 import INA226Sensor as INA226Sensor_2
 from controller import PIDController
 from manager import RoverManager
 from sphericalTrigonometry import SphericalPoint
@@ -17,8 +18,9 @@ from gpiozero import OutputDevice
 import queue
 from lora_sender import LoRaP2PSender
 import os
-from logger_thread import LogWriterThread   # o donde tengas tu clase
-from telemetry import make_record           # el que acabas de crear
+
+#from logger_thread import LogWriterThread   # o donde tengas tu clase
+#from telemetry import make_record           # el que acabas de crear
 
    
 def flatten_dict(d, parent_key='', sep='_'):
@@ -81,9 +83,10 @@ def main():
     gps = GPS()
     bno055 = BNO055()
     bme280 = BME280Sensor()
-    ina226 = INA226Sensor()
+    ina226_1 = INA226Sensor_1()
+    ina226_2 = INA226Sensor_2()
 
-    robot = Robot(left_motor, right_motor, left_encoder, right_encoder, gps, bno055, bme280, ina226)
+    robot = Robot(left_motor, right_motor, left_encoder, right_encoder, gps, bno055, bme280, ina226_1,ina226_2)
     controller = PIDController(robot)
 
  
@@ -105,14 +108,14 @@ def main():
     lora_started = False
 
     # --- Logger NDJSON: cola e instancia (sin arrancar aún) ---
-    log_queue = queue.Queue(maxsize=10000)
-    log_thread = None
-    log_started = False
+    #log_queue = queue.Queue(maxsize=10000)
+    #log_thread = None
+    #log_started = False
     # Carpeta base de logs (SD externa si está montada)
-    LOG_ROOT = "/mnt/extsd" if os.path.ismount("/mnt/extsd") else os.path.expanduser("~")
+    #LOG_ROOT = "/mnt/extsd" if os.path.ismount("/mnt/extsd") else os.path.expanduser("~")
     # Frecuencia de log (10 Hz)
-    LOG_PERIOD = 0.10
-    last_log_ts = 0.0
+    #LOG_PERIOD = 0.10
+    #last_log_ts = 0.0
 
 
     
@@ -173,13 +176,13 @@ def main():
                         lora_thread.start()
                         lora_started = True
                         print("[INFO] Hilo LoRa P2P iniciado.")
-                    if not log_started:
-                        run_dir = os.path.join(LOG_ROOT, "logs", time.strftime("%Y%m%d_%H%M%S"))
-                        os.makedirs(run_dir, exist_ok=True)
-                        log_thread = LogWriterThread(q=log_queue, base_dir=run_dir, basename="sensors",
-                                                    rotate_mb=20, flush_every=25)
-                        log_thread.start()
-                        log_started = True
+                    #if not log_started:
+                    #    run_dir = os.path.join(LOG_ROOT, "logs", time.strftime("%Y%m%d_%H%M%S"))
+                    #    os.makedirs(run_dir, exist_ok=True)
+                    #    log_thread = LogWriterThread(q=log_queue, base_dir=run_dir, basename="sensors",
+                    #                               rotate_mb=20, flush_every=25)
+                    #    log_thread.start()
+                    #    log_started = True
 
             elif currently_task == "inAir":
                 led2.off()
@@ -281,13 +284,13 @@ def main():
             csv_payload = ','.join(str_values)
 
             #Log a SD (NDJSON), p.ej. 10 Hz
-            now = time.time()
-            if log_started and (now - last_log_ts) >= LOG_PERIOD:
-                last_log_ts = now
-                rec = make_record(sensors_data, currently_task, epoch, extra={"lora_payload": csv_payload})
-                if log_queue.full():
-                    _ = log_queue.get_nowait()   # descarta el más viejo para no frenar
-                log_queue.put_nowait(rec)
+            #now = time.time()
+            #if log_started and (now - last_log_ts) >= LOG_PERIOD:
+            #    last_log_ts = now
+            #    rec = make_record(sensors_data, currently_task, epoch, extra={"lora_payload": csv_payload})
+            #    if log_queue.full():
+            #        _ = log_queue.get_nowait()   # descarta el más viejo para no frenar
+            #    log_queue.put_nowait(rec)
             
             # === AQUÍ ENTRA tu envío a LoRa por queue (solo si el hilo ya está iniciado) ===
             if lora_started:
