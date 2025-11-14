@@ -17,6 +17,10 @@ from gpiozero import OutputDevice
 import queue
 from lora_sender import LoRaP2PSender
 import os
+from logger_thread import LogWriterThread   # o donde tengas tu clase
+from telemetry import make_record           # el que acabas de crear
+
+   
 def flatten_dict(d, parent_key='', sep='_'):
     items = []
     for k, v in d.items():
@@ -97,10 +101,24 @@ def main():
     
     currently_task=tasks[0]
     epoch = 0
+
         # --- LoRa: cola e instancia del hilo (sin arrancar aún) ---
     lora_queue = queue.Queue(maxsize=500)
     lora_thread = None
     lora_started = False
+
+    # --- Logger NDJSON: cola e instancia (sin arrancar aún) ---
+    log_queue = queue.Queue(maxsize=10000)
+    log_thread = None
+    log_started = False
+    # Carpeta base de logs (SD externa si está montada)
+    LOG_ROOT = "/mnt/extsd" if os.path.ismount("/mnt/extsd") else os.path.expanduser("~")
+    # Frecuencia de log (10 Hz)
+    LOG_PERIOD = 0.10
+    last_log_ts = 0.0
+
+
+    
     try:
         # Para detección de aterrizaje por baja aceleración
         low_accel_start_time = None
@@ -158,6 +176,13 @@ def main():
                         lora_thread.start()
                         lora_started = True
                         print("[INFO] Hilo LoRa P2P iniciado.")
+                    if not log_started:
+                        run_dir = os.path.join(LOG_ROOT, "logs", time.strftime("%Y%m%d_%H%M%S"))
+                        os.makedirs(run_dir, exist_ok=True)
+                        log_thread = LogWriterThread(q=log_queue, base_dir=run_dir, basename="sensors",
+                                                    rotate_mb=20, flush_every=25)
+                        log_thread.start()
+                        log_started = True
 
             elif currently_task == "inAir":
                 led2.off()
@@ -244,9 +269,7 @@ def main():
                     print("Objetivo alcanzado (dentro de 5 metros)")
                     robot.stop()
                     currently_task = tasks[0]
-                
-                #elapsed = time.time() - start
-                #time.sleep(max(0, dt - elapsed))
+
                 time.sleep(0.01)
 
             elif currently_task == "CamaraControl":
@@ -259,6 +282,15 @@ def main():
             values = [truncate_value(k, v) for k, v in filtered]
             str_values = [str(v) for v in values]
             csv_payload = ','.join(str_values)
+
+            #Log a SD (NDJSON), p.ej. 10 Hz
+            now = time.time()
+            if log_started and (now - last_log_ts) >= LOG_PERIOD:
+                last_log_ts = now
+                rec = make_record(sensors_data, currently_task, epoch, extra={"lora_payload": csv_payload})
+                if log_queue.full():
+                    _ = log_queue.get_nowait()   # descarta el más viejo para no frenar
+                log_queue.put_nowait(rec)
             
             # === AQUÍ ENTRA tu envío a LoRa por queue (solo si el hilo ya está iniciado) ===
             if lora_started:
