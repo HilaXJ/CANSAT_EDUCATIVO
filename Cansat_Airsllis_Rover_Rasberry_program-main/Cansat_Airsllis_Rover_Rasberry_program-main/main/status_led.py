@@ -30,6 +30,9 @@ class StatusLed:
         try:
             self.off()
             self.pixels.deinit()
+            print("Apagando y cerrando el LED...")
+            pass
+
         except AttributeError:
             # Algunas versiones pueden no tener deinit()
             pass

@@ -1,4 +1,3 @@
-
 import math
 import numpy as np
 from bno055 import BNO055
@@ -31,8 +30,7 @@ class Robot():
         self.bno055 = bno055
         self.bme280 = bme280
         self.ina226_1 = ina226_1
-        self.ina226_2 = ina226_2  
-
+        self.ina226_2 = ina226_2
         self.reference, _ = self.gps.read()
         self.theta = bno055.get_heading_radians()
         self.theta = math.atan2(math.sin(self.theta), math.cos(self.theta))
@@ -92,7 +90,7 @@ class Robot():
             "battery_1": v1,
             "battery_2": v2
         }
-    
+
     def active_calibration_bno055(self, timeout=120, speed=0.5):
         """
         Ejecuta un movimiento en forma de '8' hasta que el BNO055 esté calibrado.
@@ -234,6 +232,35 @@ if __name__ == "__main__":
     robot = Robot(left_motor, right_motor,
                   left_encoder, right_encoder,
                   gps, bno055, bme280, ina226_1,ina226_2)
+    print("=== TEST SENSORES ROBOT (Ctrl+C para salir) ===")
+    try:
+        while True:
+            state = robot.get_full_state()
+
+            print("\n--- LECTURA ---")
+            # Pose
+            #pose = state["pose"]
+            #print(f"Pose: x={pose['x']:.3f}  y={pose['y']:.3f}  theta={pose['theta']:.3f} rad")
+
+            # Ambiente BME280
+            print(f"Temperatura: {state['temperature']:.2f} °C")
+            print(f"Presión:     {state['pressure']:.2f} hPa")
+            print(f"Humedad:     {state['humidity']:.2f} %")
+
+            # Baterías (dos INA226)
+            batt = state["battery"]
+            print(f"Batería 1 (INA226_1): {batt['battery_1']:.2f} V")
+            print(f"Batería 2 (INA226_2): {batt['battery_2']:.2f} V")
+
+            # GPS
+            gps = state["gps"]
+            print(f"GPS: lat={gps['latitude']:.6f}  lon={gps['longitude']:.6f}  alt={gps['altitude']:.1f} m")
+
+            time.sleep(1.0)   # una lectura por segundo
+    except KeyboardInterrupt:
+        print("\n[TEST] Fin de prueba por usuario.")
+        robot.stop()
+
     """
     print("=== ROBOT TEST START ===")
     print("Initial state:", robot.get_full_state())
@@ -280,5 +307,5 @@ if __name__ == "__main__":
     # ...inicialización de robot y sensores como ya tienes...
 
     # Simple test: move forward and print heading for 10 seconds
-    robot.active_calibration_bno055()
-    robot.move_forward_with_heading(duration=10, speed=1)
+    #robot.active_calibration_bno055()
+    #robot.move_forward_with_heading(duration=10, speed=1)

@@ -48,10 +48,10 @@ def truncate_value(key, value):
 
 
 
-DATA_FILE = "data_to_send.txt"
+# DATA_FILE = "data_to_send.txt"
 def main():
     dt = 0.01   # 100 Hz (puedes ajustar según tu loop)
-    min_altitude_air = 10  # meters
+    min_altitude_air = 6  # meters
     # Reference altitude variables
     alt_ref_bme = None
     alt_ref_gps = None
@@ -138,8 +138,6 @@ def main():
         
         while True:
             if currently_task == "sensorCalibration":
-                # leds on
-                led2.on()
                 sensors_data = calibration.get_values()
                 print("\n=== SENSOR CALIBRATION DATA ===")
                 for key, value in sensors_data.items():
@@ -166,10 +164,9 @@ def main():
                     if not lora_started:
                         lora_thread = LoRaP2PSender(
                             q=lora_queue,
-                            port="/dev/serial0",         # igual que en tu script actual
-                            baud=9600,
-                            p2p="915000000:7:0:0:16:20", # mismo P2P que tu receptor
-                            reset_pin=27,
+                            port="/dev/ttyAMA1",         # igual que en tu script actual
+                            baud=115200,
+                            p2p="915000000:7:125:0:10:14", # mismo P2P que tu receptor
                             period=1.0,                  # cadencia de envío aprox. 1s
                             max_len=240
                         )
@@ -185,7 +182,6 @@ def main():
                     #    log_started = True
 
             elif currently_task == "inAir":
-                led2.off()
                 sensors_data = calibration.get_values()
                 print("\n=== SENSOR CALIBRATION DATA ===")
                 for key, value in sensors_data.items():
@@ -220,13 +216,10 @@ def main():
                         low_accel_start_time = None
 
             elif currently_task == "nicrom":
-                
-                led2.on()
                 print("Activating nicrom")
                 nicrom.on()
-                time.sleep(40)
+                time.sleep(30)
                 nicrom.off()
-                led2.off()
                 print("Nicrom deactivated. Proceeding to sensor calibration and GPSControl.")
                 time.sleep(5)
                 # Calibrate sensors (as before)

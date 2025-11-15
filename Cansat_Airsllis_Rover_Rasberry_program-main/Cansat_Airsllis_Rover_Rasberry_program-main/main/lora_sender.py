@@ -1,5 +1,8 @@
-# lora_sender.py
-import time, threading, queue, binascii
+#!/usr/bin/env python3
+import time
+import threading
+import queue
+import binascii
 import serial
 from gpiozero import OutputDevice
 
@@ -8,10 +11,17 @@ class LoRaP2PSender(threading.Thread):
     Hilo que inicializa el RAK3172 en P2P y envía payloads por AT+PSEND (HEX).
     Usa una queue para recibir strings y las transmite sin bloquear el main.
     """
-    def __init__(self, q: queue.Queue,
-                 port="/dev/serial0", baud=9600,
-                 p2p="915000000:7:0:0:16:20",
-                 reset_pin=27, period=1.0, max_len=240):
+
+    def __init__(
+        self,
+        q: queue.Queue,
+        port="/dev/serial0",
+        baud=9600,
+        p2p="915000000:7:0:0:16:20",
+        reset_pin=None,        # AHORA PUEDE SER None
+        period=1.0,
+        max_len=240,
+    ):
         super().__init__(daemon=True)
         self.q = q
         self.port = port
@@ -39,11 +49,18 @@ class LoRaP2PSender(threading.Thread):
         self._at(f"AT+PSEND={hexpl}", wait=0.4)
 
     def _reset_and_config(self):
-        rst = OutputDevice(self.reset_pin, active_high=True, initial_value=True)
-        rst.off(); time.sleep(0.5); rst.on(); time.sleep(0.1)
+        # Solo resetear si se especificó un pin
+        if self.reset_pin is not None:
+            rst = OutputDevice(self.reset_pin, active_high=True, initial_value=True)
+            rst.off()
+            time.sleep(0.5)
+            rst.on()
+            time.sleep(0.1)
+
+        # Config LoRa P2P
         self._at("AT")
-        self._at("AT+PRECV=0")
-        self._at("AT+NWM=0")
+        self._at("AT+PRECV=0")        # asegurar modo TX
+        self._at("AT+NWM=0")          # P2P
         self._at(f"AT+P2P={self.p2p}")
 
     def run(self):
@@ -80,5 +97,5 @@ class LoRaP2PSender(threading.Thread):
         try:
             if self.ser:
                 self.ser.close()
-        except:
+        except Exception:
             pass
