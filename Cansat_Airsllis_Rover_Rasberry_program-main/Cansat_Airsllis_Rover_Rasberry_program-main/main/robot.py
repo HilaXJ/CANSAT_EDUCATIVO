@@ -16,8 +16,8 @@ class Robot():
         self.theta = 0
         self.speed = 0
         self.w = 0
-        self.wheel_radius = 0.08
-        self.wheel_base_length = 0.19
+        self.wheel_radius = 0.09
+        self.wheel_base_length = 0.23
         self.max_left_wheel_speed = 10
         self.max_right_wheel_speed = 10
         self.max_speed = 10
@@ -31,7 +31,7 @@ class Robot():
         self.bme280 = bme280
         self.ina226_1 = ina226_1
         self.ina226_2 = ina226_2
-        self.reference, _ = self.gps.read()
+        # self.reference, _ = self.gps.read()
         self.theta = bno055.get_heading_radians()
         self.theta = math.atan2(math.sin(self.theta), math.cos(self.theta))
 
@@ -117,6 +117,7 @@ class Robot():
         self.update_speed_normalize(0, 0)
         time.sleep(1)
         t8_start = time.time()
+        print("before calibration loop")
         while time.time() - t8_start < 10:
             self.update_speed_normalize(speed, speed*0.3)
             time.sleep(2)
@@ -127,6 +128,8 @@ class Robot():
         start_time = time.time()
 
         # Bucle principal de calibración
+        print("before calibration loop 2")
+
         while time.time() - start_time < timeout:
             sys, gyro, accel, mag = self.bno055.get_calibration_status()
             print(f"SYS={sys} GYRO={gyro} ACCEL={accel} MAG={mag}", end="\r")
@@ -157,6 +160,8 @@ class Robot():
             self.update_speed_normalize(0, 0)
             time.sleep(1)
             t8_start = time.time()
+            print("before calibration loop 3")
+
             while time.time() - t8_start < 10:
                 self.update_speed_normalize(speed, speed*0.3)
                 time.sleep(2)

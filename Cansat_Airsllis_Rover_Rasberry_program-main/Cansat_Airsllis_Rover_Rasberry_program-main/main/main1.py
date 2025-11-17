@@ -51,7 +51,7 @@ def truncate_value(key, value):
 # DATA_FILE = "data_to_send.txt"
 def main():
     dt = 0.01   # 100 Hz (puedes ajustar según tu loop)
-    min_altitude_air = 6  # meters
+    min_altitude_air = 1  # meters
     # Reference altitude variables
     alt_ref_bme = None
     alt_ref_gps = None
@@ -62,7 +62,7 @@ def main():
     right_motor = Motor(RIGHT_MOTOR_INPUT[0], RIGHT_MOTOR_INPUT[1])
 
     # === Nicrom GPIO ===
-    nicrom = OutputDevice(6, active_high=True, initial_value=False)
+    # nicrom = OutputDevice(6, active_high=True, initial_value=False)
 
 
     # === Encoders ===
@@ -79,18 +79,27 @@ def main():
         RIGHT_ENCODER_INPUT['ticks_per_revolution']
     )
 
+    print("before init")
 
     gps = GPS()
+    print("a")
+
     bno055 = BNO055()
+    print("b")
+
     bme280 = BME280Sensor()
+
     ina226_1 = INA226Sensor_1()
     ina226_2 = INA226Sensor_2()
+    print("c")
 
     robot = Robot(left_motor, right_motor, left_encoder, right_encoder, gps, bno055, bme280, ina226_1,ina226_2)
+    print("After init")
+
     controller = PIDController(robot)
 
- 
-    target = SphericalPoint(40.87894444, -119.12336111)
+    # target = SphericalPoint(40.87894444, -119.12336111)
+    target = SphericalPoint(-12.024609, -77.047370)  # Coordenadas de destino (lat, lon)
     rover_manager = RoverManager(robot, controller, target)
     calibration=Calibration(robot)
     tasks=["sensorCalibration",
@@ -98,8 +107,10 @@ def main():
            "nicrom",
            "GPSControl",
            "CamaraControl"]
+
     
-    currently_task=tasks[0]
+
+    currently_task=tasks[2]
     epoch = 0
 
         # --- LoRa: cola e instancia del hilo (sin arrancar aún) ---
@@ -118,7 +129,7 @@ def main():
     #last_log_ts = 0.0
 
 
-    
+    print("before try")
     try:
         # Para detección de aterrizaje por baja aceleración
         low_accel_start_time = None
@@ -128,7 +139,7 @@ def main():
         print("Measuring reference altitude (20 samples)...")
         for _ in range(N_REF):
             values = calibration.get_values()
-            bme_alt = values["environment"]["altitude_bme280"]
+            bme_alt = values["environment"]["altitude"]
             if bme_alt is not None and np.isfinite(bme_alt):
                 bme_altitudes.append(bme_alt)
             time.sleep(0.2)
@@ -151,8 +162,10 @@ def main():
 
                 # Check for launch: BME280 altitude >10m above reference
                 cond_bme = False
-                bme_current = sensors_data["environment"].get("altitude_bme280")
+                bme_current = sensors_data["environment"].get("altitude")
                 bme_diff = None
+                print(f"MUAJAJAJAJA. b_diff: {bme_diff}")
+
                 if bme_current is not None:
                     bme_diff = bme_current - alt_ref_bme
                     print(f"[Launch check] BME280 altitude diff: {bme_diff:.2f} m (current: {bme_current:.2f}, ref: {alt_ref_bme:.2f})")
@@ -182,6 +195,7 @@ def main():
                     #    log_started = True
 
             elif currently_task == "inAir":
+                print("VOLANDIN")
                 sensors_data = calibration.get_values()
                 print("\n=== SENSOR CALIBRATION DATA ===")
                 for key, value in sensors_data.items():
@@ -216,10 +230,11 @@ def main():
                         low_accel_start_time = None
 
             elif currently_task == "nicrom":
+
                 print("Activating nicrom")
-                nicrom.on()
-                time.sleep(30)
-                nicrom.off()
+                # nicrom.on()
+                time.sleep(5)
+                # nicrom.off()
                 print("Nicrom deactivated. Proceeding to sensor calibration and GPSControl.")
                 time.sleep(5)
                 # Calibrate sensors (as before)

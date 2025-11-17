@@ -63,6 +63,7 @@ class GPS:
         return parsed_sentence
 
     def read(self):
+        print("Reading gps")
         parsed_sentence = {}
         while True:
             try:
@@ -90,7 +91,7 @@ class GPS:
         except Exception as e:
             if self.debug:
                 pass#print(f"[GPS] Error escribiendo archivo: {e}")
-
+        print("exit gps reading")
         return SphericalPoint(lat, lon), alt
 
     def stop(self):

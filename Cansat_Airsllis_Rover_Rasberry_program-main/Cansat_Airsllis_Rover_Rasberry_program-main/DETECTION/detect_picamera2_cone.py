@@ -27,7 +27,7 @@ def main():
                         help='Ruta al modelo .tflite (EdgeTPU)')
     parser.add_argument('--labels', default=default_labels,
                         help='Ruta a labels.txt')
-    parser.add_argument('--threshold', type=float, default=0.35,
+    parser.add_argument('--threshold', type=float, default=0.55,
                         help='Confianza mínima para dibujar detecciones')
     parser.add_argument('--top_k', type=int, default=10,
                         help='Máximo de detecciones a mostrar')

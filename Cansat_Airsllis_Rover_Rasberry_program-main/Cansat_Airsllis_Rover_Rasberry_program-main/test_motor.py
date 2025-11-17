@@ -3,7 +3,7 @@ import pigpio, time
 
 IN1 = 13  # GPIO12
 IN2 = 19   # GPIO18
-FREQ = 700
+FREQ = 1000
             # 20 kHz (inaudible)
 MAX_DUTY = 1_000_000    # resolución de pigpio
 
