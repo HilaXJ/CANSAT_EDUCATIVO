@@ -22,7 +22,7 @@ class BNO055:
     Incluye corrección por orientación del montaje.
     """
 
-    DEFAULT_DECLINATION = 11.15  # Reno, Nevada (2025)
+    DEFAULT_DECLINATION = -3.46  # Reno, Nevada (2025)
 
     def __init__(self,
                  address: int = 0x28,
@@ -159,5 +159,6 @@ if __name__ == "__main__":
         print("Accelerometer:", data["acceleration"])
         print("Calibration:", data["calibration"])
         print("----")
+        time.sleep(1)
         
 
