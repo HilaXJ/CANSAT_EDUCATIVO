@@ -99,7 +99,7 @@ def main():
     controller = PIDController(robot)
 
     # target = SphericalPoint(40.87894444, -119.12336111)
-    target = SphericalPoint(-12.024609, -77.047370)  # Coordenadas de destino (lat, lon)
+    target = SphericalPoint(-12.021878, -77.058862)  # Coordenadas de destino (lat, lon)
     rover_manager = RoverManager(robot, controller, target)
     calibration=Calibration(robot)
     tasks=["sensorCalibration",
@@ -134,7 +134,7 @@ def main():
         # Para detección de aterrizaje por baja aceleración
         low_accel_start_time = None
         # === Reference altitude measurement ===
-        N_REF = 20
+        N_REF = 10
         bme_altitudes = []
         print("Measuring reference altitude (20 samples)...")
         for _ in range(N_REF):
