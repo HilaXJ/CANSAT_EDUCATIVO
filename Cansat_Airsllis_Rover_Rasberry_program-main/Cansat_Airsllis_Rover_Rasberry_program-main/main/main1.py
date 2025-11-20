@@ -9,7 +9,7 @@ from bno055 import BNO055
 from bme_280 import BME280Sensor
 from ina226_sensor_1 import INA226Sensor as INA226Sensor_1
 from ina226_sensor_2 import INA226Sensor as INA226Sensor_2
-from controller import PIDController
+from controller import PIDController,PIDController_1,PIDController_2
 from manager import RoverManager
 from sphericalTrigonometry import SphericalPoint
 from calibration import Calibration
@@ -82,20 +82,15 @@ def main():
     print("before init")
 
     gps = GPS()
-    print("a")
-
     bno055 = BNO055()
-    print("b")
-
     bme280 = BME280Sensor()
 
     ina226_1 = INA226Sensor_1()
     ina226_2 = INA226Sensor_2()
-    print("c")
 
     robot = Robot(left_motor, right_motor, left_encoder, right_encoder, gps, bno055, bme280, ina226_1,ina226_2)
     print("After init")
-
+#Aqui elegimos el tipo de control
     controller = PIDController(robot)
 
     # target = SphericalPoint(40.87894444, -119.12336111)

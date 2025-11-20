@@ -1,90 +1,74 @@
 import numpy as np
+import time
 import math
 
-class KalmanFilter():
-    def __init__(self, robot):
-        self.robot = robot
+class EKF_NoDrift:
+    def __init__(self, start_x, start_y, start_theta):
+        # Estado: [x (Este), y (Norte), theta (Heading)]
+        self.x = np.array([[start_x], 
+                           [start_y], 
+                           [start_theta]])
 
-        self.H = np.array([
-            [1, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0],
-            [0, 0, 1, 0, 0]
-        ])
+        # Incertidumbre inicial
+        self.P = np.eye(3) * 1.0
 
-        self.H_compass = np.array([
-            [0, 0, 1, 0, 0]
-        ])
+        # --- TUNING (Ajuste fino) ---
+        # Q: ¿Cuánto confiamos en la odometría (encoders)?
+        # Valores altos = confiamos poco (el filtro buscará más al GPS)
+        self.Q = np.diag([0.05, 0.05, 0.02]) 
 
-        self.P = np.array([
-            [1000, 0, 0, 0, 0],
-            [0, 1000, 0, 0, 0],
-            [0, 0, 100, 0, 0],
-            [0, 0, 0, 1000, 0],
-            [0, 0, 0, 0, 1000]
-        ])
+        # R: ¿Cuánto confiamos en el GPS?
+        # Valor estándar ~2.0 metros de error
+        self.R_gps = np.diag([2.0, 2.0])
+        
+        self.last_time = time.time()
 
-        self.Q = np.identity(5)
+    def predict(self, v, w):
+        """
+        Predicción usando Odometría (Encoders).
+        Sistema: Heading (0=Norte, CW+)
+        """
+        current_time = time.time()
+        dt = current_time - self.last_time
+        self.last_time = current_time
+        if dt > 1.0: dt = 0.01 
 
-        self.R = np.array([
-            [100, 0, 0],
-            [0, 100, 0],
-            [0, 0, 25]
-        ])
+        theta = self.x[2, 0]
 
-        self.R_compass = np.array([
-            [25]
-        ])
+        # Modelo cinemático para Heading (0=N, X=E, Y=N)
+        # dx = v * sin(theta)
+        # dy = v * cos(theta)
+        # dtheta = w
+        
+        self.x[0, 0] += v * np.sin(theta) * dt
+        self.x[1, 0] += v * np.cos(theta) * dt
+        self.x[2, 0] += w * dt
 
-    def predict(self, x, dt = 0.01):
+        # Normalizar ángulo (-pi a pi)
+        self.x[2, 0] = math.atan2(math.sin(self.x[2, 0]), math.cos(self.x[2, 0]))
 
-        speed = self.robot.speed
-        theta = self.robot.theta
+        # Jacobiano F (Cómo cambia el estado)
+        F = np.array([[1, 0,  v * np.cos(theta) * dt],
+                      [0, 1, -v * np.sin(theta) * dt],
+                      [0, 0, 1]])
 
-        F = np.array([
-            [1, 0, -speed * dt * np.sin(theta), dt * np.cos(theta), 0],
-            [0, 1,  speed * dt * np.cos(theta), dt * np.sin(theta), 0],
-            [0, 0,                           1,                  0, dt],
-            [0, 0,                           0,                  1, 0],
-            [0, 0,                           0,                  0, 1]
-        ])
-        #x = f(x, u)
-        self.P = F @ self.P @ F.transpose() + self.Q
+        # Predicción de covarianza
+        self.P = F @ self.P @ F.T + self.Q
 
-        return x
+    def update_gps(self, gps_x, gps_y):
+        """ Corrección usando GPS """
+        z = np.array([[gps_x], [gps_y]])
+        H = np.array([[1, 0, 0],
+                      [0, 1, 0]]) # Solo medimos X, Y
 
-    def update(self, x, z, only_compass = False):
+        y = z - (H @ self.x) # Error de predicción
+        S = H @ self.P @ H.T + self.R_gps
+        K = self.P @ H.T @ np.linalg.inv(S) # Ganancia Kalman
 
-        H = self.H
-        R = self.R
+        self.x = self.x + (K @ y)
+        self.P = (np.eye(3) - (K @ H)) @ self.P
 
-        if only_compass:
-            H = self.H_compass
-            R = self.R_compass
-
-            if x[2, 0] < -math.pi / 2 and z[0, 0] > math.pi / 2:
-                x[2, 0] += 2 * math.pi
-            elif x[2, 0] > math.pi / 2 and z[0, 0] < math.pi / 2:
-                 z[0, 0] += 2 * math.pi
-
-        I = np.identity(5)
-
-        y = z - H @ x
-        S = H @ self.P @ H.transpose() + R
-        K = self.P @ H.transpose() @ np.linalg.inv(S)
-
-        x = x + K @ y
-        self.P = (I - K @ H) @ self.P
-
-        return x
-
-
-    def filter(self, x, z):
-
-        x = self.update(z)
-
-        x = self.predict(x)
-
-        return x
-
+    def get_state(self):
+        return self.x[0, 0], self.x[1, 0], self.x[2, 0]
 
 

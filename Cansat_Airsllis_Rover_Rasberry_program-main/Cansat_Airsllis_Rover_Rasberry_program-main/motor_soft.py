@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import pigpio
 
+
 class Motor:
     def __init__(self, in1_pin, in2_pin, freq=20000, pwm_range=100):
         self.in1 = in1_pin
