@@ -91,10 +91,12 @@ def main():
     robot = Robot(left_motor, right_motor, left_encoder, right_encoder, gps, bno055, bme280, ina226_1,ina226_2)
     print("After init")
 #Aqui elegimos el tipo de control
-    controller = PIDController(robot)
+    # controller = PIDController(robot)
+    
+    controller = PIDController_1(robot)
 
     # target = SphericalPoint(40.87894444, -119.12336111)
-    target = SphericalPoint(-12.021878, -77.058862)  # Coordenadas de destino (lat, lon)
+    target = SphericalPoint(-12.020722, -77.057913)  # Coordenadas de destino (lat, lon)
     rover_manager = RoverManager(robot, controller, target)
     calibration=Calibration(robot)
     tasks=["sensorCalibration",
@@ -105,7 +107,7 @@ def main():
 
     
 
-    currently_task=tasks[2]
+    currently_task=tasks[0]
     epoch = 0
 
         # --- LoRa: cola e instancia del hilo (sin arrancar aún) ---

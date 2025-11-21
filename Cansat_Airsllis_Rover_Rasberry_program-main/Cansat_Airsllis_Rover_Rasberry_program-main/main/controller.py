@@ -1,12 +1,13 @@
 import math
 from sphericalTrigonometry import SphericalPoint
 import os
+import time
 class PIDController():
     def __init__(self, robot):
         self.robot = robot
         self.speed = 0.5
         self.kp = 5
-        self.ki = 0.1
+        self.ki = 0.001
         self.kd = 0
         self.previous_error = 0
         self.integral_error = 0
@@ -48,7 +49,7 @@ class PIDController():
         return self.speed, w
     
 
-class PIDController_1():
+class PIDController_1(): 
     def __init__(self, robot):
         self.robot = robot
         
